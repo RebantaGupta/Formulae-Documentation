@@ -1,3 +1,41 @@
+# Parameter-file comparer (Streamlit)
+
+This Streamlit app scans a folder of text files named like `<param>_<value>.txt` (for example `V_rf_300.txt`), extracts the largest numeric table found in each file, and provides interactive visualizations showing how table columns change with experimental parameters.
+
+Features added in this branch
+- Parameter-file discovery: finds files matching the pattern `<param>_<value>.txt` and groups them by parameter.
+- Numeric table extraction: heuristically finds the largest contiguous numeric block in a text file and parses it into a table (supports header detection when present).
+- Column values vs parameter: aggregate per-file columns and plot them vs a chosen X-axis parameter (supports mean/first/min/max aggregation for multi-row tables).
+- Fit vs parameter tab: scatter plot for a chosen column with a linear best-fit line, slope, intercept, and Pearson correlation (r).
+- X-axis units: axis labels include units when available (e.g., `V_rf (V)`, `f (MHz)`).
+- Live watch (optional): an optional `watchdog`-based auto-refresh when files change in the scanned folder (install `watchdog` to enable).
+- Theme & customization: sidebar color scheme choices (Dark/Light/Custom) and color pickers for accent/background/text.
+- Per-parameter subfolders: detects directories like `V_rf_files` and can scan them automatically.
+
+Quick start (PowerShell)
+
+1. Create or activate the workspace venv (the repo contains a venv at `\.venv` by default):
+
+```powershell
+.\.venv\Scripts\Activate.ps1  # may be blocked by PowerShell policy
+# or run Streamlit directly with the venv python:
+.\.venv\Scripts\python.exe -m streamlit run website\streamlit_app.py
+```
+
+2. Open http://localhost:8501 in your browser.
+
+Notes
+- The app ignores `.mph` files by design.
+- If you enable live watching, install `watchdog` in the venv: `pip install watchdog`.
+- The app uses heuristic parsing — if a file's table isn't detected, inspect the file or adjust file naming/header style.
+
+Development & Git
+- The new UI and features are implemented on branch `streamlit-updates`; this branch has been merged to `main` in this commit.
+- To create a PR or view the branch on GitHub: https://github.com/jackfrostbob333/Hard_Nanos_HardHaq/pull/new/streamlit-updates
+
+Contact
+If you'd like further improvements (SI-prefix-aware tick formatting, robust regressions, CSV export of fit parameters, etc.), open an issue or tell me what to add.
+
 # Parameter-based Text File Comparer (Streamlit)
 
 This Streamlit app scans a folder for parameterized text files following the pattern `<param>_<value>.txt` (for example `V_rf_300.txt`) and helps you inspect how numeric table values inside those files change with the parameter.
