@@ -86,6 +86,16 @@ COLUMN_UNITS = {
 }
 
 
+def format_xlabel(param_name: str):
+    """Return a nicely formatted x-axis label including units when available."""
+    if not param_name:
+        return "parameter"
+    unit = PARAM_DISPLAY_UNITS.get(param_name, "")
+    if unit:
+        return f"{param_name} ({unit})"
+    return str(param_name)
+
+
 def find_param_files(folder: Path):
     results = {}
     unmatched = []
@@ -456,8 +466,8 @@ if show_scan:
     with st.sidebar.expander("Scan folder details", expanded=True):
         st.write(f"Folder: `{scan_folder}`")
         st.write(f"Parameter key used: `{param_used}`")
-# Page tabs at the top: Home and Column-values
-tab_home, tab_col = st.tabs(["Home", "Column values vs parameter"]) 
+# Page tabs at the top: Home, Column-values and Fit
+tab_home, tab_col, tab_fit = st.tabs(["Home", "Column values vs parameter", "Fit vs parameter"]) 
 # allow the user to choose which parameter to measure by (X-axis)
 # options: union of detected filename params and known default params
 _x_options = sorted(set(list(param_files.keys()) + list(DEFAULT_PARAM_VALUES.keys())))
@@ -726,7 +736,7 @@ with tab_col:
                         palette.append(mcolors.to_hex(cmap(i % 10)))
 
                 # use display-scaled x values for plotting and label axes with units
-                xlabel = f"{x_param} ({display_unit})" if display_unit else str(x_param if x_param is not None else "parameter")
+                xlabel = format_xlabel(x_param if x_param is not None else param_used)
                 with plt.style.context(style_ctx):
                     if combined_plot:
                         fig3, ax3 = plt.subplots(figsize=(10, 5))
@@ -783,3 +793,85 @@ st.write("---")
 st.caption("Pattern used to detect parameter files: `<param>_<value>.txt` (e.g., `V_rf_300.txt`). If you'd like different filename parsing or support for .mph files, tell me and I can extend this.")
 
 # (removed separate metrics plot — only the Column values vs parameter plot is shown)
+
+
+# --- Fit tab: scatter + best-fit line for a selected column vs parameter ---
+with tab_fit:
+    st.write("---")
+    st.subheader("Line of best fit vs parameter")
+
+    # Rebuild per-file aggregates (lightweight) — same logic as Column-values tab
+    fit_rows = []
+    fit_found_cols = set()
+    for v, p in param_files[param_used]:
+        txt = read_text(p)
+        tbl, rng = extract_numeric_table(txt)
+        if override_enabled and override_value is not None:
+            xval = float(override_value)
+        elif x_param is not None and param_used is not None and x_param.lower() == param_used.lower():
+            xval = v
+        else:
+            xval = float(DEFAULT_PARAM_VALUES[x_param]) if x_param in DEFAULT_PARAM_VALUES else v
+        row = {"value": xval, "file": p.name, "file_param_value": v}
+        if tbl is not None:
+            for c in tbl.columns:
+                fit_found_cols.add(c)
+                try:
+                    row[c] = tbl[c].mean(skipna=True)
+                except Exception:
+                    row[c] = None
+        fit_rows.append(row)
+
+    fit_df = pd.DataFrame(fit_rows)
+    fit_candidate_cols = [c for c in DEFAULT_COL_NAMES if c in fit_found_cols] + [c for c in sorted(fit_found_cols) if c not in DEFAULT_COL_NAMES]
+
+    if not fit_candidate_cols:
+        st.info("No numeric table columns detected across files to fit. Try files with numeric tables or adjust parsing settings.")
+    else:
+        default_fit = fit_candidate_cols[0] if fit_candidate_cols else None
+        fit_col = st.selectbox("Column to fit", options=fit_candidate_cols, index=0, key="fit_col_select")
+
+        # prepare x and y
+        fd = fit_df.dropna(subset=[fit_col, "value"], how="any")
+        if fd.empty:
+            st.info("No data available for the selected column to fit.")
+        else:
+            fd = fd.sort_values(by="value")
+            x_raw = fd["value"].to_numpy()
+            display_scale = PARAM_DISPLAY_SCALE.get(x_param if x_param is not None else "", 1.0)
+            display_unit = PARAM_DISPLAY_UNITS.get(x_param if x_param is not None else "", "")
+            x = x_raw * display_scale
+            y = fd[fit_col].to_numpy()
+
+            # compute linear fit
+            try:
+                coef = np.polyfit(x, y, 1)
+                slope, intercept = float(coef[0]), float(coef[1])
+                y_fit = slope * x + intercept
+            except Exception:
+                slope, intercept = float('nan'), float('nan')
+                y_fit = np.full_like(x, np.nan)
+
+            # Pearson r
+            try:
+                if np.nanstd(x) == 0 or np.nanstd(y) == 0:
+                    r = float('nan')
+                else:
+                    r = float(np.corrcoef(x, y)[0, 1])
+            except Exception:
+                r = float('nan')
+
+            # plot
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ax.scatter(x, y, label='data', color=accent_color if theme_choice == 'Custom' else 'tab:blue')
+            ax.plot(x, y_fit, label=f'fit: y={slope:.3g}x+{intercept:.3g}', color='red')
+            ax.set_xlabel(format_xlabel(x_param if x_param is not None else param_used))
+            unit = COLUMN_UNITS.get(fit_col, "")
+            ax.set_ylabel(f"{fit_col} ({unit})" if unit else fit_col)
+            ax.set_title(f"Best-fit for {fit_col} vs {x_param}")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            fig.tight_layout()
+            st.pyplot(fig)
+
+            st.markdown(f"**Slope:** {slope:.6g} — **Intercept:** {intercept:.6g} — **Pearson r:** {('nan' if r is None or np.isnan(r) else f'{r:.3f}')} ")
