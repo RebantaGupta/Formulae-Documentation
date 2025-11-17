@@ -1,0 +1,14 @@
+# Ignore virtual environments
+/.venv
+/.venv_website
+/website/.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
