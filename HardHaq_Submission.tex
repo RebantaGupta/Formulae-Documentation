@@ -1,11 +1,13 @@
 \documentclass[12pt]{article}
 \usepackage{graphicx}
+\usepackage{caption}
 \usepackage{geometry}
 \usepackage[table]{xcolor}
 \usepackage{titlesec}
 \usepackage{fancyhdr}
 \setlength{\headheight}{15pt}
 \usepackage{array}
+\usepackage{amsmath}
 \geometry{margin=1in}
 \usepackage{pgfplotstable}
 \pgfplotsset{compat=1.18}
@@ -37,54 +39,120 @@
 \maketitle
 
 \section{Introduction}
-Our team adopted a systematic strategy to tackle the ion trap challenge. We began by developing a clear understanding of the fundamental components of the RF Paul trap—examining the roles of the RF rods, DC endcaps, and vacuum region, and considering why each element was designed in its particular way. This foundational knowledge ensured that subsequent modifications were grounded in physical intuition rather than trial and error.
 
-With this baseline established, we proceeded to vary individual parameters one at a time, carefully observing how each adjustment influenced the trap metrics. This step allowed us to isolate the effects of rod spacing, electrode length, and voltage settings, and to build a direct connection between parameter changes and performance outcomes such as trap depth, offset, and estimated RF power.
+Our team adopted a systematic strategy to tackle the ion trap challenge. We began by developing a clear understanding of the fundamental components of the RF Paul trap, recognizing that each element plays a distinct and indispensable role in achieving stable confinement. This foundational knowledge ensured that subsequent modifications were grounded in physical intuition rather than trial and error.
 
-Once we had characterized the sensitivity of the system to these parameters, we advanced to optimization using MATLAB’s integration with COMSOL. This enabled us to automate portions of the tuning process and identify parameter sets that improved confinement quality while balancing efficiency.
+\subsection{RF Rods: Radial Confinement}
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{paul_trap_schematic.png}
+    \captionof{figure}{Schematic of RF Paul trap showing RF rods, DC endcaps, and vacuum chamber.\\
+    \textbf{Subtitle:} Radial confinement arises from oscillating RF rods which produce a time-varying quadrupole potential that focuses ions dynamically in the radial plane.}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}
+    \raggedright
+    \small
+    The RF rods form the core of the quadrupole field. By applying an oscillating radiofrequency voltage, they generate a time-varying potential that counteracts the natural tendency of ions to escape. This produces dynamic stability in the radial plane through alternating focusing and defocusing forces.
 
-Finally, after refining the provided baseline design, we explored alternative geometries. Among several candidates, we focused on parabolic rods, which offered promising symmetry and confinement properties. We optimized the parameters of this new geometry and evaluated its impact on the trap metrics, comparing its performance against the original configuration to highlight both improvements and trade-offs.
-
-\section{Design Choices}
-\begin{itemize}
-    \item \textbf{Geometry modifications:} We began with the baseline COMSOL model and explored changes to rod spacing, electrode length, and endcap placement. After refining the default geometry, we experimented with alternative designs, ultimately focusing on parabolic rods due to their promising symmetry and confinement properties.
+    It is important to note that the rods cannot simply be held at static voltages. A purely static quadrupole potential would violate Earnshaw's theorem, which states that no collection of static electric fields can create a stable equilibrium point for a charged particle in free space:
     
-    \item \textbf{Parameter tuning:} Each editable parameter was varied individually to observe its effect on trap metrics. We adjusted RF voltage, DC endcap voltages, and rod spacing systematically, then used MATLAB–COMSOL integration to automate parameter sweeps and identify optimized configurations that balanced trap depth with reduced RF power consumption.
+
+\[
+    \Phi(x,y,z) = \frac{V}{2r_0^2}(x^2 - y^2).
+    \]
+
+
+    Such a configuration confines in one radial direction but defocuses in the orthogonal direction, leading to instability.
+
+    The oscillating RF field solves this problem by creating a pseudo-potential:
     
-    \item \textbf{Rationale:} Our modifications were guided by physical intuition and metric outcomes. Geometry changes targeted improved electrode symmetry and reduced offset, while parameter tuning sought deeper potential wells and more efficient confinement. The parabolic rod design was chosen to explore innovative geometries that could enhance stability, even though it required careful optimization to avoid excessive power usage.
-\end{itemize}
+
+\[
+    U_{\text{eff}}(r) = \frac{q^2 V^2}{4 m \Omega^2 r_0^2} \, r^2.
+    \]
 
 
-\section{Trap Metrics Results}
+    This time-averaged pseudo-potential produces stable confinement in the radial directions, circumventing Earnshaw’s theorem.
+\end{minipage}
+\end{figure}
 
-\rowcolors{2}{IonGray}{white}
-\begin{center}
-\begin{tabular}{|>{\columncolor{IonGray}}l|c|}
-\hline
-\textbf{Metric} & \textbf{Value} \\
-\hline
-depth\_eV   & 0.1171 \\
-minU\_eV    & 49.6875 \\
-maxU\_eV    & 49.8047 \\
-trap\_x     & 0 \\
-trap\_y     & 5.0E-6 \\
-trap\_z     & 0.01 \\
-offset\_mm  & 10.0000 \\
-P\_est\_mW  & 8797.30 \\
-\hline
-\end{tabular}
-\end{center}
+\subsection{DC Endcaps: Axial Stability}
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{dc_endcaps.png}
+    \captionof{figure}{Illustration of DC endcaps providing axial confinement along the longitudinal axis of the trap.\\
+    \textbf{Subtitle:} DC endcaps establish a static potential well along the trap axis, preventing axial drift and enabling long-term confinement when combined with the RF radial pseudopotential.}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}
+    \raggedright
+    \small
+    While the RF field stabilizes radial motion, it cannot prevent ions from drifting along the longitudinal axis. The DC endcaps address this limitation by providing static axial confinement. Their role is to establish a potential well along the trap’s axis:
+    
 
-Highlight improvements compared to the default configuration. If possible, show before vs. after values.
+\[
+    \Phi(z) = \frac{\kappa V_{\text{DC}}}{z_0^2} z^2,
+    \]
+
+
+    where \(V_{\text{DC}}\) is the applied endcap voltage, \(z_0\) is the characteristic axial dimension, and \(\kappa\) is a geometry-dependent constant.
+\end{minipage}
+\end{figure}
+
+\subsection{Vacuum Region: Isolation and Longevity}
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{vacuum_mean_free_path.png}
+    \captionof{figure}{Diagram of mean free path in the vacuum region.\\
+    \textbf{Subtitle:} Sparse background gas molecules increase the mean free path, reducing collisions and preserving ion coherence.}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}
+    \raggedright
+    \small
+    Surrounding the electrodes is the vacuum region, which is not merely a passive environment but a critical requirement. By minimizing collisions with background gas molecules, the vacuum preserves ion coherence, reduces heating, and allows long trapping times. The mean free path \(\lambda\) is given by:
+    
+
+\[
+    \lambda = \frac{k_B T}{\sqrt{2} \pi d^2 P}.
+    \]
+
+
+    Achieving ultra-high vacuum ensures that \(\lambda\) is much larger than the trap dimensions, suppressing ion loss due to scattering.
+\end{minipage}
+\end{figure}
+
+\subsection{Interplay of Components}
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{trap_interplay.png}
+    \captionof{figure}{Composite schematic showing RF rods, DC endcaps, and vacuum chamber working together.\\
+    \textbf{Subtitle:} Stable confinement emerges only when dynamic radial forces, static axial potentials, and isolation are combined.}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}
+    \raggedright
+    \small
+    Together, these three components—RF rods for radial confinement, DC endcaps for axial stability, and the vacuum region for isolation—form a carefully balanced system. Stable confinement emerges only when dynamic and static potentials are combined in a low-pressure environment, reflecting the fundamental design principle of the Paul trap.
+\end{minipage}
+\end{figure}
 
 \section{Visual Evidence}
-Include at least one screenshot of your trap geometry and potential distribution. Example:
-
 \begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.7\textwidth]{trap_geometry.png}
-    \caption{\textcolor{IonBlue}{Modified trap geometry with reduced offset.}}
+\centering
+\begin{minipage}{0.49\textwidth}
+    \includegraphics[width=\linewidth]{trap_geometry.png}
+    \captionof{figure}{\textcolor{IonBlue}{Modified trap geometry with reduced offset.}\\
+    \textbf{Subtitle:} The modified geometry reduces electrode offset while preserving symmetry. This snapshot shows electrode contours and highlights the targeted geometric adjustments.}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}
+    \raggedright
+    \small
+    This figure shows the final geometry used in our optimized trap design. The reduced offset improves symmetry and confinement efficiency, as confirmed by the trap metrics and potential distribution.
+\end{minipage}
 \end{figure}
+
 
 \section{Analysis \& Discussion}
 \begin{itemize}
