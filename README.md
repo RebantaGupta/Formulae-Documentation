@@ -116,7 +116,6 @@ streamlit run streamlit_app.py
 ## Notes / Next steps
 
 - Filenames must match the regex `(?P<param>[A-Za-z0-9]+)_(?P<value>-?\d+(?:\.\d+)?)\.txt`.
-- I implemented simple metrics; if you want the app to parse `.mph` files or use richer domain-specific parsing, I can add that.
 - The app intentionally ignores `.mph` files and will not open or modify them.
 
 ## Live file watching

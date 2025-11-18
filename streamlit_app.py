@@ -603,7 +603,7 @@ with tab_col:
         if "P_est_mW" in candidate_cols:
             default_select.append("P_est_mW")
         selected_plot_cols = st.multiselect("Columns to plot vs parameter", options=candidate_cols, default=default_select)
-        combined_plot = st.checkbox("Plot selected columns on one combined graph", value=True)
+        combined_plot = st.checkbox("Plot selected columns on one combined graph", value=False)
 
         if selected_plot_cols:
             plot_df = col_values_df[["value", "file"] + selected_plot_cols].copy()
