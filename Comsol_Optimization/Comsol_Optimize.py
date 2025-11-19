@@ -13,7 +13,7 @@ baseline_values = {
     "rod_spacing": 0.005,
     "rod_radius": 0.002,
     "rod_length": 0.04,
-    "endcap_offset": 0.01
+    "endcap_offset": 0.001
 }
 
 # --- Target values for normalization ---
