@@ -26,7 +26,7 @@ targets = {
 # --- Weights for each objective ---
 weights = {
     "depth_eV": 1.0,
-    "offset_mm": 10.0,
+    "offset_mm": 100.0,
     "P_est_mW": 0.8
 }
 
@@ -62,7 +62,9 @@ def objective(depth_eV, offset_mm, P_est_mW):
     power_score  = (targets["P_est_mW"] + 1e-9) / (P_est_mW + 1e-9)
 
     print(depth_score, offset_score, power_score)
-    
+    print((weights["depth_eV"] * depth_score), \
+          (weights["offset_mm"] * offset_score), \
+          (weights["P_est_mW"] * power_score))
 
     # Weighted sum
     score = (weights["depth_eV"] * depth_score) \
