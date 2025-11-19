@@ -102,6 +102,9 @@ def run_trial(params, model, writer, f):
     score = objective(depth_eV, offset_mm, P_est_mW)
     print("Optimizer result:", -score)
 
+    if targets["offset_mm"] > 15:
+        return 1e6
+
     try:
         # write a row using the provided DictWriter and flush the underlying file
         writer.writerow({
