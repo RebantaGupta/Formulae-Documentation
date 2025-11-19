@@ -19,7 +19,7 @@ baseline_values = {
 # --- Target values for normalization ---
 targets = {
     "depth_eV": 5.0,     # want >= 5 eV
-    "offset_mm": 0.0001,    # want ~0 mm
+    "offset_mm": 0.001,    # want ~0 mm
     "P_est_mW": 1000.0      # want ~1000 mW
 }
 
@@ -27,7 +27,7 @@ targets = {
 weights = {
     "depth_eV": 1.0,
     "offset_mm": 10.0,
-    "P_est_mW": 0.1
+    "P_est_mW": 0.8
 }
 
 def find_model_file(preferred_name: str = "3d_pole_trap - Copy.mph") -> Path:
@@ -60,8 +60,9 @@ def objective(depth_eV, offset_mm, P_est_mW):
     depth_score  = depth_eV / (targets["depth_eV"] + 1e-9)
     offset_score = (targets["offset_mm"] + 1e-9) / (offset_mm + 1e-9)
     power_score  = (targets["P_est_mW"] + 1e-9) / (P_est_mW + 1e-9)
-    if offset_mm > 10:
-        return -1e6
+
+    print(depth_score, offset_score, power_score)
+    
 
     # Weighted sum
     score = (weights["depth_eV"] * depth_score) \
